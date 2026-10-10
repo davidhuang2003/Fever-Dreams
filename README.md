@@ -1,281 +1,94 @@
-# Fever-Dreams: Disaster Preparedness Simulator
+# Fever-Dreams
 
-A browser game that teaches people how to prepare for and respond to natural disasters. The first scenario, **The Long Night**, is a severe storm followed by a power outage: the player has limited time and money to prepare a household, makes decisions as conditions change, and gets a personalized debrief at the end.
+## Assignment
 
-> Fever-Dreams is an educational tool, not an emergency-alert service. It never presents outcomes as real survival odds, and every safety explanation links to an authoritative source with the date it was reviewed.
+Build one small browser game that teaches a player how to prepare for a severe storm and power outage. The player has limited time and money, chooses preparations, responds to three events, and receives a short explanation of what helped.
 
-**New to programming?** You don't need a CS degree to work on this. The repo is starter code: the home page and `/health` already work, and the milestones below walk you through the rest one testable step at a time. Words in `backticks` are names from the code or database; unfamiliar terms are in the [glossary](#glossary).
+This is a CS50-style specification: it describes what the program must do, but your code and visual design can be your own. Complete only this scenario before adding other disasters.
 
----
+## Game Loop
 
-## How the Pieces Fit Together
+1. A user registers or logs in.
+2. The user starts **The Long Night** scenario.
+3. The player makes five preparation choices.
+4. The player makes three response choices during the storm.
+5. Each choice changes time, money, or readiness.
+6. The final page explains the player's strengths and missed preparations.
 
-Fever-Dreams uses five technologies, and each one has a single job:
+Track four readiness areas: **Supplies**, **Communication**, **Safety**, and **Community**. Do not calculate a fictional survival percentage.
 
-| Layer | Technology | Its job here | Lives in |
-| --- | --- | --- | --- |
-| Structure | HTML (Jinja templates) | Pages, forms, buttons, choice cards | `templates/` |
-| Style | CSS | Layout, colors, responsive and accessible design | `static/css/` |
-| Interaction | JavaScript | Sends choices without reloading the page, draws the storm scene | `static/js/` |
-| Logic | Python + Flask | Routes, login, **enforcing every game rule** | `app.py`, `db.py` |
-| Storage | PostgreSQL | Users, scenarios, playthroughs, choices, sources | `schema.sql`, `seed.sql` |
+## Frontend
 
-The browser **never** talks to the database directly:
+Use HTML, CSS, and JavaScript.
+
+- HTML provides the forms, choices, status values, and result content.
+- CSS makes the pages readable, responsive, and keyboard accessible.
+- JavaScript submits choices with `fetch`, updates the screen, prevents double submissions, and draws a simple storm scene with Canvas.
+- Important instructions must remain readable without Canvas or animation.
+- Respect `prefers-reduced-motion` and never use color as the only status indicator.
+
+Required pages are: home, registration, login, dashboard, scenario briefing, game, and results.
+
+## Flask
+
+Flask connects the browser to PostgreSQL. Implement routes for authentication, starting a playthrough, loading its current state, recording one choice, and displaying results.
+
+When recording a choice, Flask must:
+
+1. Confirm the user owns the playthrough.
+2. Confirm the choice belongs to the current decision.
+3. Reject duplicate, unaffordable, or late choices.
+4. Insert the choice and update scores in one transaction.
+5. Return the new state as JSON.
+
+Store only the user's ID in the session. Hash passwords, use parameterized SQL, and keep `DATABASE_URL` and `SECRET_KEY` in `.env`.
+
+## PostgreSQL
+
+PostgreSQL is the source of truth. The main relationships are:
 
 ```text
-Browser (HTML + CSS + JS)  ──fetch / form──▶  Flask (Python)  ──SQL──▶  PostgreSQL
-           ▲                                       │
-           └──────────── HTML page or JSON ◀───────┘
+users (1) --------< playthroughs >-------- (1) scenarios
+scenarios (1) --------< decision_points (1) --------< choices
+playthroughs (1) --------< player_choices >-------- (1) choices
+choices >--------< guidance_sources through choice_sources
 ```
 
-### Example: what happens when a player clicks a choice
+Use the tables defined in `schema.sql`:
 
-1. **JavaScript** disables the buttons (no double-clicks) and `POST`s the choice to `/api/playthroughs/<id>/choices`.
-2. **Flask** checks the player is logged in and owns this playthrough.
-3. **Flask + PostgreSQL**, in one transaction: confirm the choice belongs to the current decision, hasn't been made already, and is affordable in time and budget; then save it and update scores.
-4. **Flask** returns the new game state as JSON (or a `4xx` error if anything failed, with nothing saved).
-5. **JavaScript** updates the budget, time, scores, and storm scene from that response.
+- `users` stores accounts and password hashes.
+- `scenarios` and `decision_points` store the ordered game content.
+- `choices` stores costs, score effects, and feedback.
+- `playthroughs` stores one user's current attempt and scores.
+- `player_choices` records exactly one choice per decision.
+- `guidance_sources` connects safety explanations to trusted sources.
 
-The golden rule: **the browser is untrusted.** JavaScript can hide a button the player can't afford, but Flask must still reject that choice. Never put passwords, scoring rules, or validation you rely on in JavaScript.
+Foreign keys and unique constraints must enforce these relationships. The same checks must still work after Flask restarts.
 
----
-
-## Quick Start
-
-You'll need **Python 3.11+**, **PostgreSQL**, **Git**, and a modern browser. Run these commands in a terminal (Windows PowerShell shown).
-
-### 1. Create a virtual environment and install packages
+## Run the Starter
 
 ```powershell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
+Copy-Item .env.example .env
+flask --app app run --debug
 ```
 
-If PowerShell blocks activation, use `.venv\Scripts\python.exe` in place of `python`.
-
-### 2. Create the database (in `psql`, SQL Shell, or pgAdmin, as an admin)
-
-```sql
-CREATE USER fever_dreams WITH PASSWORD 'choose-a-local-password';
-CREATE DATABASE fever_dreams OWNER fever_dreams;
-```
-
-Use a throwaway development password, never a personal one.
-
-### 3. Configure settings
-
-copy `.env.example` to `.env`, put in your database password, and set `SECRET_KEY` to a long random value. `.env` is git-ignored; never commit it.
-
-### 4. Create the tables and load the storm scenario
+Create the PostgreSQL database, update `.env`, then apply `schema.sql` followed by `seed.sql`. Run tests with:
 
 ```powershell
-psql -d "postgresql://fever_dreams:your-password@localhost:5432/fever_dreams" -f schema.sql
-psql -d "postgresql://fever_dreams:your-password@localhost:5432/fever_dreams" -f seed.sql
+python -m pytest -q
 ```
 
-### 5. Run the app and tests
+## Complete When
 
-```powershell
-flask --app app run --debug     # open http://127.0.0.1:5000
-python -m pytest -q             # skipped tests = milestones not built yet, not failures
-```
+- A user can register, log in, log out, and see only their games.
+- The seeded storm scenario can be completed from beginning to end.
+- Refreshing or double-clicking cannot record a choice twice.
+- Invalid choices do not partially change money, time, or scores.
+- Results are rebuilt from PostgreSQL and cite preparedness guidance.
+- The interface works on mobile, with a keyboard, and with reduced motion.
+- Automated tests cover authentication, ownership, choice validation, and transactions.
 
----
-
-## The Game
-
-A playthrough takes 5–7 minutes across four stages:
-
-1. **Briefing**: meet the household, the hazard, and your time and budget.
-2. **Prepare**: pick preparations (supplies, alerts, a family communication plan, medication, pets, charging devices…).
-3. **Respond**: make decisions as the storm and outage unfold.
-4. **Debrief**: see what your choices led to and how to improve.
-
-Readiness is scored in four categories instead of a fake survival percentage: **Supplies**, **Communication**, **Safety**, and **Community**. A choice can affect several categories and cost time and/or money. There doesn't have to be one perfect answer, but every consequence must be explained.
-
-**Minimum for the first scenario:**
-
-- 5+ preparation turns offering 8+ possible actions
-- 3+ response decisions, each with 2+ choices
-- A limited budget and a limited amount of time, **enforced by the server**
-- Immediate visual feedback after each choice
-- A final score in all four categories, plus a written debrief based on the player's actual choices
-- Replay with a fresh playthrough
-
-### Pages
-
-| Page | Must do |
-| --- | --- |
-| **Home** | Explain the simulator; register/log in; start or continue a scenario |
-| **Briefing** | Disaster, household and special needs, starting budget and time, a **Begin** button |
-| **Game** | Phase, prompt, choices, remaining time and budget, four categories, a changing scene, protection against double submissions |
-| **Results** | Final scores, key choices, at least one strength and one improvement, source links, **Play Again** / **Dashboard** |
-| **Dashboard** | The player's own finished and unfinished playthroughs (scenario, status, times, result) and never anyone else's |
-
-### Accessibility (required, not optional)
-
-Semantic HTML (headings, labels, landmarks) · full keyboard control · visible focus styles · never use color alone to show state · readable contrast · alt text for meaningful graphics · respect `prefers-reduced-motion` · keep critical instructions in HTML, not only drawn on the canvas.
-
----
-
-## Building Each Layer
-
-### HTML, CSS, and JavaScript
-
-**Build plain HTML forms first, then add JavaScript.** A form that reloads the page but saves the choice correctly is a better foundation than a slick animation that loses data.
-
-Once that works, `static/js/game.js` should:
-
-- Submit choices with `fetch`, disable buttons while waiting, and show network/validation errors.
-- Update phase, progress, budget, time, and scores **from the server's response**, not from its own math.
-
-`static/js/graphics.js` draws the scene with the Canvas API or p5.js: clouds gathering, rain intensifying, lights going out, supplies appearing. The graphics should reflect the game state, not just decorate the page.
-
-### Python and Flask
-
-A **route** is a Python function tied to a URL; a **template** is an HTML file Flask fills with data. Flask must:
-
-- Read `DATABASE_URL` and `SECRET_KEY` from the environment.
-- Hash passwords (e.g. Werkzeug's helpers) and store only the user's id in the session.
-- Use **parameterized SQL** for every user-supplied value (prevents SQL injection).
-- Check ownership before showing or changing any playthrough.
-- Use `POST` for anything that changes data. Opening a URL must never change game state.
-
-| Method | Route | Purpose |
-| --- | --- | --- |
-| `GET` | `/` | Home page |
-| `GET`, `POST` | `/register`, `/login` | Create an account / log in |
-| `POST` | `/logout` | End the session |
-| `GET` | `/dashboard` | Player's history |
-| `GET` | `/scenarios/<id>` | Scenario briefing |
-| `POST` | `/playthroughs` | Start a new playthrough |
-| `GET` | `/playthroughs/<id>` | Game page (HTML) |
-| `GET` | `/api/playthroughs/<id>` | Current state (JSON) |
-| `POST` | `/api/playthroughs/<id>/choices` | Validate and record one choice |
-| `GET` | `/playthroughs/<id>/results` | Debrief |
-
-Paths can differ if the behavior is equivalent. Build and test one route at a time.
-
-**The choice transaction** is the hardest part. A transaction makes several database changes all-or-nothing: if saving the choice fails, the budget deduction is undone too. Inside one transaction, the choice route should:
-
-1. Load and **lock** the playthrough (e.g. `SELECT ... FOR UPDATE`) and confirm the user owns it and it's still active.
-2. Confirm the choice belongs to the current decision point, wasn't already made, and fits the remaining time and budget.
-3. Insert into `player_choices`; update time, budget, scores, and position; mark complete if it was the last decision.
-4. Commit and return JSON. On any failure, roll back and return a `4xx`.
-
-### PostgreSQL
-
-PostgreSQL is the single source of truth. Don't swap in SQLite or browser storage. Think of each table as a spreadsheet with strict rules; `schema.sql` already defines them, so read it one table at a time.
-
-```text
-disaster_types 1──< scenarios 1──< decision_points 1──< choices
-                       │                                   │  ╲
-users 1──< playthroughs >──1                               │   >──< guidance_sources
-                 │                                         │       (via choice_sources)
-                 1──< player_choices >─────────────────────1
-```
-
-| Table | Stores |
-| --- | --- |
-| `users` | Accounts: unique username/email, password **hash** (no real names or locations) |
-| `disaster_types` | Storm, wildfire, flood… |
-| `scenarios` | A playable story: household, starting budget/time, difficulty, published flag |
-| `decision_points` | Ordered steps in a scenario (`prepare` or `respond` phase) |
-| `choices` | Options at a step: costs, effect on each category, feedback text |
-| `playthroughs` | One user's attempt: status, remaining budget/time, position, scores |
-| `player_choices` | What the player picked. This is what makes the debrief explainable. |
-| `guidance_sources` / `choice_sources` | Cited preparedness guidance (with review date) linked to choices |
-
-Let the database reject bad data with constraints: primary/foreign keys everywhere, `NOT NULL`, `UNIQUE` (usernames; one choice per decision per playthrough), `CHECK` (statuses, phases, nonnegative costs, score ranges), deliberate `ON DELETE` rules, indexes on foreign keys, and `TIMESTAMPTZ` timestamps. Unpublished scenarios must not be playable.
-
-Write at least three analysis queries of your own in `queries.sql` (e.g. *Which preparation is missed most often?*).
-
----
-
-## Project Layout
-
-```text
-app.py            Flask app and routes
-db.py             Opens and closes PostgreSQL connections
-schema.sql        Table definitions and constraints
-seed.sql          The Long Night storm scenario
-queries.sql       Analysis queries
-.env.example      Required settings with placeholder values (commit this; never .env)
-templates/        HTML pages rendered by Flask
-static/css/       Styles
-static/js/        game.js (interaction) and graphics.js (canvas scene)
-tests/            pytest checks
-```
-
-Feel free to add modules or rename files. Just keep browser, Flask, and database responsibilities separate.
-
----
-
-## Milestones
-
-Finish and commit each one before starting the next. "Done" means you can demo it, explain it, and fix it if it breaks.
-
-| # | Milestone | Checkpoint to prove it works |
-| --- | --- | --- |
-| 1 | **Design**: wireframes for the 5 pages, write the scenario, find a source per safety tip, sketch the ER diagram | You can walk someone through a full playthrough on paper |
-| 2 | **Database**: load `schema.sql` and `seed.sql`, test relationships in `psql` | `SELECT * FROM scenarios;` shows **The Long Night** |
-| 3 | **Flask + login**: connect with Psycopg, register/login/logout, protect routes | The stored password is an unreadable hash; user A can't open user B's game |
-| 4 | **Server-rendered pages**: all templates, CSS, accessible controls | With JavaScript **disabled**, you can still start and view a game |
-| 5 | **Interactive game**: `fetch` choices, update from JSON, canvas scene, error handling | Click once, refresh, and PostgreSQL has exactly **one** row for that decision |
-| 6 | **Results + testing**: debrief from saved choices, sources, automated tests, a11y/mobile checks | All tests below pass |
-
----
-
-## Testing
-
-When you fix a bug, add a test that would have caught it. Your tests and manual checks should show:
-
-- **Auth:** register/login/logout work; duplicate usernames/emails are rejected; passwords are stored only as hashes.
-- **Authorization:** anonymous visitors and other users cannot view or change a playthrough.
-- **Scenarios:** published scenarios start; unpublished ones don't.
-- **Choices:** invalid, wrong-decision, unaffordable, and duplicate (double-click/refresh) choices are rejected. A valid choice creates exactly one `player_choices` row.
-- **Transactions:** a failed choice leaves scores, budget, and history unchanged (force an error mid-transaction to prove it). The last decision marks the playthrough complete.
-- **Persistence:** results rebuild from PostgreSQL after restarting Flask, and appear on the right dashboard.
-- **UI:** works on a narrow mobile screen and with only a keyboard.
-
----
-
-## When You Get Stuck
-
-1. Read the **first** error in the terminal or browser console.
-2. Work out which layer it's in: browser, Flask, or PostgreSQL.
-3. Check the virtual environment is active and `.env` has the right `DATABASE_URL`.
-4. Run the SQL directly in `psql` with test data.
-5. Print values going into the failing function (never passwords or secrets).
-6. Shrink it to the smallest failing route, query, or click.
-
-When asking for help, share the exact error, what you expected, and the smallest relevant code. Remove passwords and connection strings first.
-
----
-
-## Glossary
-
-- **API**: how programs talk to each other; here, JavaScript calls Flask and gets JSON back.
-- **Authentication / Authorization**: *who are you?* (login) vs. *what are you allowed to touch?* (ownership checks).
-- **Constraint**: a database rule that rejects invalid data, like a negative budget.
-- **Environment variable**: a setting kept outside the code, like `DATABASE_URL` or `SECRET_KEY`.
-- **Primary / foreign key**: a row's unique id / a column pointing to a row in another table.
-- **Hash**: a one-way scramble of a password; you can check it but not reverse it.
-- **JSON**: the text format JavaScript and Flask use to exchange data.
-- **Route / Template**: a URL handled by a Flask function / an HTML file Flask fills with data.
-- **Seed data**: starter rows (`seed.sql`) inserted into an empty database.
-- **Session**: how Flask remembers who is logged in between requests.
-- **SQL injection**: an attack from pasting user input into SQL text; prevented by parameterized queries.
-- **Transaction**: a group of database changes that all succeed or all roll back.
-
----
-
-## Done Means
-
-**Deliverables:** the working app, `schema.sql` / `seed.sql` / `queries.sql`, tests, `.env.example`, an ER diagram or short design doc, a list of sources with review dates, and a short reflection on one database decision, one accessibility decision, and one playtesting lesson.
-
-**Judged on:** correctness, data design, security, usability and accessibility, educational quality, clean separation between layers, and testing. One polished scenario where everything works together beats many half-finished ones.
-
-**Later ideas** (only after the above works): wildfire/earthquake/flood scenarios, educator accounts with aggregate results, concept-based achievements, translations, a scenario editor for admins, real disaster data (always labeled with source and update time), and PostGIS maps.
-
+Fever-Dreams is an educational simulator, not an emergency-alert service or a substitute for instructions from local authorities.
