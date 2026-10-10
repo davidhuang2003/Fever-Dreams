@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ scenario.title }} | Fever-Dreams{% endblock %}
+
+{% block main %}
+  <section class="scenario-brief">
+    <p class="eyebrow">{{ scenario.disaster_type_name }} · {{ scenario.difficulty }}</p>
+    <h1>{{ scenario.title }}</h1>
+    <p class="lede">{{ scenario.description }}</p>
+
+    <div class="brief-grid">
+      <article class="card"><h2>Household</h2><p>{{ scenario.household_description }}</p></article>
+      <article class="card"><h2>Resources</h2><p>${{ scenario.starting_budget }} and {{ scenario.starting_time }} preparation hours.</p></article>
+    </div>
+
+    <form action="/playthroughs" method="post">
+      <input type="hidden" name="scenario_id" value="{{ scenario.id }}">
+      <button class="button" type="submit">Begin scenario</button>
+    </form>
+  </section>
+{% endblock %}
+

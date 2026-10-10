@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>{% block title %}Fever-Dreams{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    {% block head %}{% endblock %}
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="site-header">
+      <a class="wordmark" href="{{ url_for('index') }}">Fever-Dreams</a>
+      <nav aria-label="Primary navigation">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/login">Log in</a>
+        <a class="button button-small" href="/register">Create account</a>
+      </nav>
+    </header>
+
+    <main id="main-content" tabindex="-1">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <section class="flash-region" aria-label="Messages" aria-live="polite">
+            {% for category, message in messages %}
+              <p class="flash flash-{{ category }}">{{ message }}</p>
+            {% endfor %}
+          </section>
+        {% endif %}
+      {% endwith %}
+
+      {% block main %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+      <p>An educational preparedness simulator—not an emergency-alert service.</p>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+  </body>
+</html>
+

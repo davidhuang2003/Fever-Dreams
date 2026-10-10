@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ scenario.title }} | Fever-Dreams{% endblock %}
+
+{% block main %}
+  <div
+    id="game-root"
+    class="game-layout"
+    data-state-url="/api/playthroughs/{{ playthrough.id }}"
+    data-choice-url="/api/playthroughs/{{ playthrough.id }}/choices"
+  >
+    <section class="scene-panel" aria-labelledby="scene-description">
+      <canvas id="storm-canvas" width="960" height="600" aria-hidden="true"></canvas>
+      <p id="scene-description" class="sr-only">
+        An animated illustration of the household and the approaching storm.
+      </p>
+      <div class="scene-caption">
+        <span id="phase-label" class="status-pill">{{ current_point.phase }}</span>
+        <span>Decision <span id="position-value">{{ current_point.position }}</span></span>
+      </div>
+    </section>
+
+    <section class="decision-panel" aria-labelledby="decision-prompt">
+      <div class="resource-row" aria-label="Remaining resources">
+        <div><span>Budget</span><strong id="budget-value">${{ playthrough.remaining_budget }}</strong></div>
+        <div><span>Time</span><strong id="time-value">{{ playthrough.remaining_time }} hours</strong></div>
+      </div>
+
+      <div class="score-grid" aria-label="Readiness scores">
+        {% for key, label in [('supplies', 'Supplies'), ('communication', 'Communication'), ('safety', 'Safety'), ('community', 'Community')] %}
+          <div>
+            <label for="{{ key }}-score">{{ label }}</label>
+            <progress id="{{ key }}-score" max="100" value="{{ playthrough[key + '_score'] }}">{{ playthrough[key + '_score'] }}</progress>
+          </div>
+        {% endfor %}
+      </div>
+
+      <p class="eyebrow">Choose your next action</p>
+      <h1 id="decision-prompt">{{ current_point.prompt }}</h1>
+      <div id="choice-list" class="choice-list">
+        {% for choice in choices %}
+          <button class="choice-card" type="button" data-choice-id="{{ choice.id }}">
+            <strong>{{ choice.choice_text }}</strong>
+            <span>{{ choice.time_cost }} hr · ${{ choice.budget_cost }}</span>
+          </button>
+        {% endfor %}
+      </div>
+      <p id="game-message" class="game-message" role="status" aria-live="polite"></p>
+    </section>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/graphics.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/game.js') }}" defer></script>
+{% endblock %}
+
