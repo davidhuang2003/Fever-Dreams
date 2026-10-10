@@ -50,11 +50,37 @@ You type "1"  ->  play.py  ->  game.record_choice()  ->  PostgreSQL
                                    saves everything or nothing
 ```
 
-## Setup (Windows PowerShell)
+## Setup
 
-You need **Python 3.10+** and **PostgreSQL**.
+The steps are the same on Windows and Mac. Only a few commands differ, so each step shows both. Run Windows commands in **PowerShell** and Mac commands in **Terminal**.
+
+### 0. Install Python and PostgreSQL
+
+You need **Python 3.10 or newer** and **PostgreSQL**.
+
+**Windows**
+
+- Python: download it from [python.org](https://www.python.org/downloads/). In the installer, tick **"Add python.exe to PATH"**.
+- PostgreSQL: download the installer from [postgresql.org](https://www.postgresql.org/download/windows/). Remember the password you choose for the `postgres` user. The installer also adds **SQL Shell (psql)** and **pgAdmin** to the Start menu.
+
+**Mac**
+
+- Python: download it from [python.org](https://www.python.org/downloads/macos/), or run `brew install python` if you use [Homebrew](https://brew.sh). The `python3` that comes with Apple's developer tools can be too old, so check with `python3 --version`.
+- PostgreSQL: the easiest option is [Postgres.app](https://postgresapp.com/). Download it, move it to Applications, open it, and click **Initialize**. Then follow its "Configure your $PATH" instructions so the `psql` command works in Terminal. With Homebrew instead:
+
+  ```bash
+  brew install postgresql@17
+  brew services start postgresql@17
+  echo 'export PATH="$(brew --prefix postgresql@17)/bin:$PATH"' >> ~/.zshrc
+  ```
+
+  Close and reopen Terminal afterwards.
 
 ### 1. Install the Python packages
+
+Open a terminal **in the Fever-Dreams folder**. These commands create a **virtual environment**: a private folder (`.venv`) for this project's Python packages, so they don't mix with other projects.
+
+**Windows (PowerShell)**
 
 ```powershell
 python -m venv .venv
@@ -64,38 +90,69 @@ python -m pip install -r requirements.txt
 
 If PowerShell blocks `Activate.ps1`, use `.venv\Scripts\python.exe` instead of `python`.
 
+**Mac (Terminal)**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
+
+On a Mac, use `python3` only to create the virtual environment. After `source .venv/bin/activate`, plain `python` works.
+
+When the environment is active, `(.venv)` appears at the start of your prompt. **Activate it again every time you open a new terminal** (step 1's second command). Type `deactivate` to leave it.
+
 ### 2. Create the database
 
-Open **SQL Shell (psql)** or **pgAdmin** as the `postgres` user and run:
+Open PostgreSQL's command line as an admin user:
+
+- **Windows:** open **SQL Shell (psql)** from the Start menu and press Enter at each prompt to accept the defaults, then type your `postgres` password. You can use **pgAdmin** instead.
+- **Mac:** run `psql postgres` in Terminal. Postgres.app and Homebrew make your Mac username the admin, so there is no password.
+
+Then run:
 
 ```sql
 CREATE USER fever_dreams WITH PASSWORD 'choose-a-password';
 CREATE DATABASE fever_dreams OWNER fever_dreams;
 ```
 
+Type `\q` to leave `psql`.
+
 ### 3. Tell the game where the database is
+
+**Windows (PowerShell)**
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Open `.env` and replace `change-me` with the password you chose. `.env` is never committed to Git.
+**Mac (Terminal)**
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` in any text editor and replace `change-me` with the password you chose. `.env` is never committed to Git. On a Mac, Finder hides files whose names start with a dot. Press **Cmd + Shift + .** to show them, or run `open -e .env`.
 
 ### 4. Create the tables and load the scenario
 
-```powershell
+With the virtual environment active, this works on both Windows and Mac:
+
+```bash
 python play.py --setup
 ```
 
 ### 5. Play
 
-```powershell
+```bash
 python play.py
 ```
 
 ## Running the Tests
 
-```powershell
+With the virtual environment active, on Windows or Mac:
+
+```bash
 python -m pytest -q
 ```
 
