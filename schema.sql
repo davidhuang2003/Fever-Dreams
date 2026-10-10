@@ -2,14 +2,11 @@ BEGIN;
 
 CREATE TABLE users (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    username VARCHAR(50) NOT NULL,
-    email VARCHAR(254) NOT NULL,
-    password_hash TEXT NOT NULL,
+    username VARCHAR(50) NOT NULL CHECK (LENGTH(TRIM(username)) > 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE UNIQUE INDEX users_username_lower_uq ON users (LOWER(username));
-CREATE UNIQUE INDEX users_email_lower_uq ON users (LOWER(email));
 
 CREATE TABLE disaster_types (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
