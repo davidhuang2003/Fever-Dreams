@@ -58,12 +58,12 @@ The steps are the same on Windows and Mac. Only a few commands differ, so each s
 
 You need **Python 3.10 or newer** and **PostgreSQL**.
 
-**Windows**
+#### Windows
 
 - Python: download it from [python.org](https://www.python.org/downloads/). In the installer, tick **"Add python.exe to PATH"**.
 - PostgreSQL: download the installer from [postgresql.org](https://www.postgresql.org/download/windows/). Remember the password you choose for the `postgres` user. The installer also adds **SQL Shell (psql)** and **pgAdmin** to the Start menu.
 
-**Mac**
+#### Mac
 
 - Python: download it from [python.org](https://www.python.org/downloads/macos/), or run `brew install python` if you use [Homebrew](https://brew.sh). The `python3` that comes with Apple's developer tools can be too old, so check with `python3 --version`.
 - PostgreSQL: the easiest option is [Postgres.app](https://postgresapp.com/). Download it, move it to Applications, open it, and click **Initialize**. Then follow its "Configure your $PATH" instructions so the `psql` command works in Terminal. With Homebrew instead:
@@ -80,7 +80,7 @@ You need **Python 3.10 or newer** and **PostgreSQL**.
 
 Open a terminal **in the Fever-Dreams folder**. These commands create a **virtual environment**: a private folder (`.venv`) for this project's Python packages, so they don't mix with other projects.
 
-**Windows (PowerShell)**
+#### Windows (PowerShell)
 
 ```powershell
 python -m venv .venv
@@ -90,7 +90,7 @@ python -m pip install -r requirements.txt
 
 If PowerShell blocks `Activate.ps1`, use `.venv\Scripts\python.exe` instead of `python`.
 
-**Mac (Terminal)**
+#### Mac (Terminal)
 
 ```bash
 python3 -m venv .venv
@@ -120,13 +120,13 @@ Type `\q` to leave `psql`.
 
 ### 3. Tell the game where the database is
 
-**Windows (PowerShell)**
+#### Windows (PowerShell)
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-**Mac (Terminal)**
+#### Mac (Terminal)
 
 ```bash
 cp .env.example .env
