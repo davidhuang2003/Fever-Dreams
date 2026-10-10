@@ -32,15 +32,15 @@ Your choice (or q to save and quit):
 
 ## Files
 
-| File | What it does |
-| --- | --- |
-| `play.py` | The terminal screens: prints text and reads what you type. **Start here.** |
-| `game.py` | The rules: checks each choice and saves it to the database |
-| `db.py` | Connects to PostgreSQL and creates the tables |
-| `schema.sql` | The tables and the rules the database enforces |
-| `seed.sql` | The storm scenario: decisions, choices, and feedback |
-| `queries.sql` | Example questions you can ask the data |
-| `tests/` | Automated checks, run with `pytest` |
+| File          | What it does                                                               |
+| ------------- | -------------------------------------------------------------------------- |
+| `play.py`     | The terminal screens: prints text and reads what you type. **Start here.** |
+| `game.py`     | The rules: checks each choice and saves it to the database                 |
+| `db.py`       | Connects to PostgreSQL and creates the tables                              |
+| `schema.sql`  | The tables and the rules the database enforces                             |
+| `seed.sql`    | The storm scenario: decisions, choices, and feedback                       |
+| `queries.sql` | Example questions you can ask the data                                     |
+| `tests/`      | Automated checks, run with `pytest`                                        |
 
 How a choice flows through the program:
 
@@ -120,13 +120,13 @@ Type `\q` to leave `psql`.
 
 ### 3. Tell the game where the database is
 
-#### Windows (PowerShell)
+#### Windows: copy the settings file
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-#### Mac (Terminal)
+#### Mac: copy the settings file
 
 ```bash
 cp .env.example .env
@@ -171,7 +171,7 @@ The rules are checked in two places:
 
 ## Ideas for What to Build Next
 
-- Write your own questions in `queries.sql` (for example, *which bad choice is picked most often?*).
+- Write your own questions in `queries.sql` (for example, _which bad choice is picked most often?_).
 - Add a second scenario to `seed.sql`, such as a wildfire or flood, and let the player pick one.
 - Add a "random event" decision that only appears if the player skipped a preparation.
 
